@@ -1,0 +1,20 @@
+{
+  "name": "ife-wireframe",
+  "version": "1.0.0",
+  "description": "Aviation IFE (In-Flight Entertainment) seat-back touchscreen wireframe. Responsive UI with PIN lock, media controls, camera feeds, Quran player, and map view. Google Home-inspired design.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.0"
+  }
+}
