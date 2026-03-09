@@ -573,6 +573,7 @@ function MediaScreen({ onBack, onNavigate, isSmall }) {
   const [mode, setMode] = useState(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [inPlayer, setInPlayer] = useState(false);
+  const [broadcastIdx, setBroadcastIdx] = useState(0);
   const isPortrait = window.innerHeight > window.innerWidth;
 
   // Mode selector
@@ -614,39 +615,121 @@ function MediaScreen({ onBack, onNavigate, isSmall }) {
     );
   }
 
-  /* ── BROADCAST: list only, no controls ── */
+  /* ── BROADCAST: PiP + selection panel (large) / touch list (small) ── */
   if (mode === "broadcast") {
+    const bItem = MEDIA_ITEMS[broadcastIdx];
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: G.bg }}>
         <IFEBar isSmall={isSmall} />
         <TopBar title="Global Broadcast" onBack={() => setMode(null)} isSmall={isSmall} color={G.blue}
           rightContent={<ModeBadge mode="broadcast" />} />
-        <div style={{ flex: 1, overflow: "auto", padding: 12 }}>
-          <div style={{ fontSize: 12, color: G.textDim, padding: "4px 4px 10px", fontFamily: "'Google Sans', system-ui" }}>
-            Select media to broadcast to all cabin monitors
-          </div>
-          {MEDIA_ITEMS.map(item => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: 14, width: "100%",
-              background: G.card, border: `1.5px solid ${G.border}`,
-              borderRadius: 14, padding: "14px 16px", marginBottom: 8,
-              boxShadow: G.shadow, cursor: "pointer", transition: "all 0.15s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = G.blue; e.currentTarget.style.boxShadow = G.shadowLg; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.boxShadow = G.shadow; }}
-            >
+
+        {/* ── Large (10" landscape): PiP left + selection sidebar right ── */}
+        {!isSmall && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
+            {/* PiP */}
+            <div style={{ flex: 1, padding: 16, display: "flex" }}>
+              <VideoPreview label={bItem.title} isSmall={false} fullWidth />
+            </div>
+            {/* Selection sidebar */}
+            <div style={{
+              width: 232, flexShrink: 0, display: "flex", flexDirection: "column",
+              borderLeft: `1px solid ${G.border}`, overflow: "hidden",
+            }}>
               <div style={{
-                width: 40, height: 40, borderRadius: 12, background: `${G.blue}10`,
-                display: "flex", alignItems: "center", justifyContent: "center", color: G.blue, flexShrink: 0,
-              }}><BroadcastIcon /></div>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ color: G.text, fontSize: 14, fontWeight: 600, fontFamily: "'Google Sans', system-ui" }}>{item.title}</div>
-                <div style={{ color: G.textDim, fontSize: 12, marginTop: 2 }}>{item.type} · {item.duration}</div>
+                padding: "10px 14px", fontSize: 11, fontWeight: 700,
+                color: G.textDim, fontFamily: "'Google Sans', system-ui",
+                letterSpacing: 0.8, textTransform: "uppercase",
+                borderBottom: `1px solid ${G.border}`, flexShrink: 0,
+              }}>Select Media</div>
+              <div style={{ flex: 1, overflow: "auto", padding: 8 }}>
+                {MEDIA_ITEMS.map((item, idx) => {
+                  const active = idx === broadcastIdx;
+                  return (
+                    <div key={item.id} onClick={() => setBroadcastIdx(idx)} style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      background: active ? `${G.blue}08` : G.card,
+                      border: `1.5px solid ${active ? G.blue : G.border}`,
+                      borderRadius: 10, padding: "10px 12px", marginBottom: 6,
+                      cursor: "pointer", transition: "all 0.15s", boxShadow: G.shadow,
+                    }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = G.blue; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = G.border; }}
+                    >
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        background: active ? `${G.blue}18` : `${G.blue}10`,
+                        display: "flex", alignItems: "center", justifyContent: "center", color: G.blue,
+                      }}><BroadcastIcon /></div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          color: active ? G.blue : G.text, fontSize: 13,
+                          fontWeight: active ? 700 : 600, fontFamily: "'Google Sans', system-ui",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>{item.title}</div>
+                        <div style={{ color: G.textDim, fontSize: 11, marginTop: 2 }}>{item.type} · {item.duration}</div>
+                      </div>
+                      {active && (
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, color: G.blue,
+                          background: `${G.blue}12`, padding: "2px 7px",
+                          borderRadius: 50, letterSpacing: 0.5, flexShrink: 0,
+                          fontFamily: "'Google Sans', monospace",
+                        }}>LIVE</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
-        </div>
-        
+          </div>
+        )}
+
+        {/* ── Small (4.3" portrait): touch-friendly scrollable list, no PiP ── */}
+        {isSmall && (
+          <div style={{ flex: 1, overflow: "auto", padding: 12 }}>
+            <div style={{
+              fontSize: 12, color: G.textDim, padding: "4px 4px 10px",
+              fontFamily: "'Google Sans', system-ui",
+            }}>Select media to broadcast to all cabin monitors</div>
+            {MEDIA_ITEMS.map((item, idx) => {
+              const active = idx === broadcastIdx;
+              return (
+                <div key={item.id} onClick={() => setBroadcastIdx(idx)} style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  background: active ? `${G.blue}08` : G.card,
+                  border: `1.5px solid ${active ? G.blue : G.border}`,
+                  borderRadius: 14, padding: "14px 16px", marginBottom: 8,
+                  cursor: "pointer", transition: "all 0.15s", boxShadow: G.shadow,
+                }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = G.blue; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = G.border; }}
+                >
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                    background: active ? `${G.blue}18` : `${G.blue}10`,
+                    display: "flex", alignItems: "center", justifyContent: "center", color: G.blue,
+                  }}><BroadcastIcon /></div>
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={{
+                      color: active ? G.blue : G.text, fontSize: 14,
+                      fontWeight: active ? 700 : 600, fontFamily: "'Google Sans', system-ui",
+                    }}>{item.title}</div>
+                    <div style={{ color: G.textDim, fontSize: 12, marginTop: 2 }}>{item.type} · {item.duration}</div>
+                  </div>
+                  {active && (
+                    <div style={{
+                      fontSize: 9, fontWeight: 700, color: G.blue,
+                      background: `${G.blue}12`, padding: "3px 9px",
+                      borderRadius: 50, letterSpacing: 0.5, flexShrink: 0,
+                      fontFamily: "'Google Sans', monospace",
+                    }}>LIVE</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
